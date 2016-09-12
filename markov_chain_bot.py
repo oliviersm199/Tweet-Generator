@@ -1,32 +1,49 @@
 # -*- coding: utf-8 -*-
 '''
-Using Stored Trump Tweets, a chatbot will generate a JSON formatted document that I can then use to generate random tweets
-of variable length.
-
+Upon initializing object, a JSON formatted document is created which is used
+to generate a random walk. This will generate random text that occasionally
+produces amusing sentences.
 '''
+import tweepy
+import os
+import sys
 import json
 import re
 import random
+import trump_quotes
 
-class TrumpTweeter:
-	def __init__(self,db,Quote):
+class PersonTweeter:
+	def __init__(self,twitter_id="25073877",load_tweets=True):
 		'''
-
-		Initialize giving a SQLAlchemy Object Quote which contains the quotes
-		from twitter. A JSON document will be generated in the current working
-		directory which will be used in subsequent methods to generate Trump
-		Tweets.
-
+		By default we are using Donald Trump's Twitter ID.
+		By default tweets are loaded each time into a JSON
+		document. If you want to prevent that from happening,
+		just set load_tweets to false.
 		'''
-		# intiailizing the json doc to use as markov chain
-		self.Quote = Quote
-		self.db = db
+		self.twitter_id = twitter_id
 		# Generating the json document
-		self._generate_json_doc()
+		if load_tweets:
+			self._generate_json_doc()
 
 		# Loading the json document into the object field.
-		with open("trump.json") as trump_json:
-			self.trump_json = json.load(trump_json)
+		with open("tweets.json") as json_doc:
+			self.json_tree = json.load(json_doc)
+
+	def _get_tweets(self,):
+		# Setting API Keys
+		try:
+			consumer_key= os.environ['TWITTER_PUBLIC_CONSUMER_KEY']
+			consumer_secret= os.environ['TWITTER_SECRET_CONSUMER_KEY']
+			access_token = os.environ['TWITTER_PUBLIC_ACCESS_KEY']
+			access_token_secret = os.environ['TWITTER_SECRET_ACCESS_KEY']
+		except KeyError as e:
+			print("Please set the missing environment key.",e)
+			sys.exit(-1)
+
+		auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
+		auth.set_access_token(access_token, access_token_secret)
+		api = tweepy.API(auth)
+		return api.user_timeline(id=self.twitter_id,count=200)
 
 	def _triple_sets(self,sentence):
 		'''
@@ -35,7 +52,7 @@ class TrumpTweeter:
 		'''
 		sentence_list = sentence.split()
 		for i in range(len(sentence_list) - 2):
-			yield (sentence_list[i], sentence_list[i+1], sentence_list[i+2])
+			yield (sentence_list[i], sentence_list[i+1],sentence_list[i+2])
 
 	def _generate_json_doc(self,):
 		'''
@@ -49,14 +66,14 @@ class TrumpTweeter:
 
 		'''
 		# Get all the quotes
-		quotes = self.Quote.query.all()
+		quotes = [quote.text for quote in self._get_tweets()]
 
 		# Set up a dictionary to store the quotes in a tree like structure
 		markov_dict = {}
 
 		# for each quote, set up all possible combinations
 		for quote in quotes:
-			for w1,w2,w3 in self._triple_sets(quote.quote_text):
+			for w1,w2,w3 in self._triple_sets(quote):
 				# Do not allow the words to contain  "\"" and do not copy expressions that are urls.
 				if not re.match("http.*",w1) and not re.match("http.*",w2) and not re.match("http.*",w3):
 					w1 = w1.replace("\"","")
@@ -66,55 +83,8 @@ class TrumpTweeter:
 
 		# Prettyprint a sorted list of the markov dict into a the trump.json doc
 		json_text = json.dumps(markov_dict,indent=4,sort_keys=True)
-		with open("trump.json","w") as f:
+		with open("tweets.json","w") as f:
 			f.write(json_text)
-
-	def generate_random_tweet(self,length=140):
-		'''
-
-		Using the document generated in the intialization step, generate a tweet
-		by executing a random walk on the markov chain.
-
-		'''
-		trump_tweet = ""
-		trump_key = random.choice(self.trump_json.keys())
-		trump_tweet += trump_key.split(' ')[0] + ' '
-
-		while len(trump_tweet) < length:
-			trump_tweet += trump_key.split(' ')[1] + ' '
-			try:
-				trump_value = random.choice(self.trump_json[trump_key])
-			except KeyError as e:
-				trump_key = random.choice(self.trump_json.keys())
-
-			else:
-				word1, word2 = trump_key.split(" ")
-				trump_key = ' '.join([word2,trump_value])
-
-		return self._proper_capitalization(trump_tweet)
-
-
-	def generate_fake_real_tweet(self,):
-		'''
-		Will generate a fake or random tweet with 50% probability
-		'''
-		# flipping a coin
-		choice = random.randint(0,1)
-
-		# This is the real option
-		if choice==0:
-			quote_number = random.randrange(0, self.db.session.query(self.Quote).count())
-			quote_object = self.Quote.query.all()[quote_number]
-			quote = {}
-			quote['quote_text'] = quote_object.quote_text
-			quote['id'] = quote_object.id
-
-		else:
-			quote = {}
-			quote['quote_text'] = self.generate_random_tweet()
-			quote['id'] = -1
-
-		return quote
 
 	def _proper_capitalization(self,sentence):
 		'''
@@ -138,3 +108,30 @@ class TrumpTweeter:
 					sentence_list[i+1] = sentence_list[i+1].capitalize()
 
 		return ' '.join(sentence_list)
+
+	def generate_random_tweet(self, length=140):
+		'''
+		Using the document generated in the intialization step, generate a tweet
+		by executing a random walk on the markov chain.
+		'''
+
+		# Start with Empty String
+		tweet = ""
+
+		#Initial Starting Key
+		key = random.choice(self.tweet_json.keys())
+
+		while len(tweet) < length:
+			try:
+				value = random.choice(self.trump_json[trump_key])
+			except KeyError as e:
+				trump_tweet += '. '
+				trump_value = random.choice(self.trump_json.keys())
+
+			trump_tweet += ' '.join([trump_key,trump_value])
+
+			# Getting second word in trump key to generate new key
+			trump_second = trump_key.split(' ')[1]
+			trump_key = ' '.join([trump_second,trump_value])
+
+		return self._proper_capitalization(trump_tweet)

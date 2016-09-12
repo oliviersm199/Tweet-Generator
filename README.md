@@ -1,15 +1,14 @@
-# drump_tweet_generator
-The drump tweet generator uses a Markov chain to generate random tweet based off of past tweets from drump. It may not necessarily makes sense but on occasion spits out some hilarious tweets. I recommend running the Flask Application and trying it on your computer. 
+# Tweet Generator
+The drump tweet generator uses a Markov chain finite state model to take a
+particular user id from twitter and generate tweets based off of that person's
+previous tweets. The tweets are stored in a JSON document which allows for random
+walks of the tweets to occur.
 
 
 Instructions to Install:
 
-Make sure you have Python and pip installed on your computer. 
+Make sure you have Python and pip installed on your computer.
 
 git clone https://www.github.com/oliviersm199/drump_tweet_generator
 
 pip install -r requirements.txt
-
-python app.py
-
-And you should have a running application at: http://127.0.0.1:5001
