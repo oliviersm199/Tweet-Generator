@@ -23,9 +23,8 @@ walks of the tweets to occur.
 git clone https://www.github.com/oliviersm199/Tweet-Generator
 cd Tweet-Generator
 
-python
->>> TPCK,TSCK,TPAK,TSAK = '<public_consumer_key>','<secret_consumer_key>','<public_access_key>','<secret_access_key>'
->>> import markov_chain_bot
->>> twitter_bot = markov_chain_bot.PersonTweeter('25073877',TPCK,TSCK,TPAK,TSAK)
->>> twitter_bot.generate_random_tweet()
->>> u"IS not a natural deal maker. Only makes bad deals! Everyone! #alconvention2016 that ran in the room with u. I pray 4 ur/our success."
+TPCK,TSCK,TPAK,TSAK = '<public_consumer_key>','<secret_consumer_key>','<public_access_key>','<secret_access_key>'
+import markov_chain_bot
+twitter_bot = markov_chain_bot.PersonTweeter('25073877',TPCK,TSCK,TPAK,TSAK)
+random_tweet = twitter_bot.generate_random_tweet()
+print(random_tweet)
