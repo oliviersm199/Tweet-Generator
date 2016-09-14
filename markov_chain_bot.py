@@ -10,16 +10,21 @@ import sys
 import json
 import re
 import random
-import trump_quotes
 
 class PersonTweeter:
-	def __init__(self,twitter_id="25073877",load_tweets=True):
+	def __init__(self,twitter_id,public_consumer_key, secret_consumer_key, public_access_key, secret_access_key,load_tweets=True):
 		'''
-		By default we are using Donald Trump's Twitter ID.
-		By default tweets are loaded each time into a JSON
-		document. If you want to prevent that from happening,
-		just set load_tweets to false.
+		The object on construction takes the following parameters:
+		    - twitter_id: The twitterID of the individual's tweets that you want to scrape
+		    - public_consumer_key: Public Consumer Key from Twitter API
+		    - secret_consumer_key: Secret Consumer Key from Twitter API
+		    - public_access_key: Public Access Key from Twitter API
+		    - secret_access_key: Secret Access Key from Twitter API
 		'''
+		self.public_consumer_key = public_consumer_key
+		self.secret_consumer_key = secret_consumer_key
+		self.public_access_key = public_access_key
+		self.secret_access_key = secret_access_key
 		self.twitter_id = twitter_id
 		# Generating the json document
 		if load_tweets:
@@ -30,18 +35,9 @@ class PersonTweeter:
 			self.json_tree = json.load(json_doc)
 
 	def _get_tweets(self,):
-		# Setting API Keys
-		try:
-			consumer_key= os.environ['TWITTER_PUBLIC_CONSUMER_KEY']
-			consumer_secret= os.environ['TWITTER_SECRET_CONSUMER_KEY']
-			access_token = os.environ['TWITTER_PUBLIC_ACCESS_KEY']
-			access_token_secret = os.environ['TWITTER_SECRET_ACCESS_KEY']
-		except KeyError as e:
-			print("Please set the missing environment key.",e)
-			sys.exit(-1)
-
-		auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
-		auth.set_access_token(access_token, access_token_secret)
+		# using the tweepy library to retrieve user queries
+		auth = tweepy.OAuthHandler(self.public_consumer_key,self.secret_consumer_key)
+		auth.set_access_token(self.public_access_key,self.secret_access_key)
 		api = tweepy.API(auth)
 		return api.user_timeline(id=self.twitter_id,count=200)
 
