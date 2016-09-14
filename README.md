@@ -4,14 +4,14 @@ particular user id from twitter and generate tweets based off of that person's
 previous tweets. The tweets are stored in a JSON document which allows for random
 walks of the tweets to occur.
 
-Goals:
+## Goals:
 
 - Simplify creating a basic Markov Chain Twitter Bot.
 - Easy to read and provide an introduction to a simple way to create something intelligent!
 
-Some features include:
+## Some features include:
 
-- Option to remove urls and hashtags.
+- Option to remove urls.
 - Option for proper capitalization
 - Output of the generated tree into a pretty JSON Format that you can review.
 - Scraping of the Twitter API using the Tweepy Library
@@ -19,6 +19,8 @@ Some features include:
 
 
 ## Installation
-git clone https://www.oliviersm199/Tweet-Generator
+
+git clone https://www.github.com/oliviersm199/Tweet-Generator
+cd Tweet-Generator
 
 python

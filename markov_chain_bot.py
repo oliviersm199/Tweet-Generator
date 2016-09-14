@@ -12,29 +12,69 @@ import re
 import random
 
 class PersonTweeter:
-	def __init__(self,twitter_id,public_consumer_key, secret_consumer_key, public_access_key, secret_access_key,load_tweets=True):
+	def __init__(self,twitter_id,tpck, tsck, tpak,tsak,load_tweets=True,proper_caps = True,remove_urls=True):
 		'''
-		The object on construction takes the following parameters:
-		    - twitter_id: The twitterID of the individual's tweets that you want to scrape
-		    - public_consumer_key: Public Consumer Key from Twitter API
-		    - secret_consumer_key: Secret Consumer Key from Twitter API
-		    - public_access_key: Public Access Key from Twitter API
-		    - secret_access_key: Secret Access Key from Twitter API
+		Params:
+		    - twitter_id: TwitterID of User : Required
+		    - tpck: Public Consumer Key from Twitter API : Required
+		    - tsck: Secret Consumer Key from Twitter API : Required
+		    - tpak: Public Access Key from Twitter API : Required
+		    - tsak: Secret Access Key from Twitter API : Required
+			- proper_caps: Set if the tweets should have capitalization corrected.
+			- remove_urls: Set to True if you want urls removed from tweet.
 		'''
-		self.public_consumer_key = public_consumer_key
-		self.secret_consumer_key = secret_consumer_key
-		self.public_access_key = public_access_key
-		self.secret_access_key = secret_access_key
+		self.public_consumer_key = tpck
+		self.secret_consumer_key = tsck
+		self.public_access_key = tpak
+		self.secret_access_key = tsak
 		self.twitter_id = twitter_id
+		self.tweets_loaded = load_tweets
+		self.proper_caps = proper_caps
+		self.remove_urls = remove_urls
 		# Generating the json document
 		if load_tweets:
 			self._generate_json_doc()
+			self._load_json_doc()
 
+	def _load_json_doc(self,):
 		# Loading the json document into the object field.
-		with open("tweets.json") as json_doc:
+		with open(self.twitter_id+".json") as json_doc:
 			self.json_tree = json.load(json_doc)
 
-	def _get_tweets(self,):
+	def _check_url(self,w1,w2,w3):
+		'''
+		Method to check if a 3 tuple set contains a url.
+		'''
+		return not (re.match("http.*",w1) or re.match("http.*",w2) or re.match("http.*",w3))
+
+	def _generate_json_doc(self,):
+		'''
+		Goes through all quotes and generates a JSON Document with the following pattern:
+
+		# "a b c a b k"
+		# {'a b': ['c','k'], 'b c': ['a'], 'c a': ['b']}
+		# Algorithm Inspired From:
+		# http://stackoverflow.com/questions/5306729/how-do-markov-chain-chatbots-work/5307230#5307230
+		'''
+		# Get all the quotes
+		quotes = [quote.text for quote in self.load_tweets()]
+
+		# Set up a dictionary to store the quotes in a tree like structure
+		markov_dict = {}
+
+		# for each quote, set up all possible combinations
+		for quote in quotes:
+			for w1,w2,w3 in self._triple_sets(quote):
+				# Do not allow the words to contain  "\"" and do not copy expressions that are urls.
+				if self.remove_urls and self._check_url(w1,w2,w3):
+					markov_dict.setdefault(unicode(' '.join((w1,w2))),[]).append(unicode(w3))
+
+		# Prettyprint a sorted list of the markov dict into a text file
+		json_text = json.dumps(markov_dict,indent=4,sort_keys=True)
+		with open(self.twitter_id+".json","w") as f:
+			f.write(json_text)
+
+	def load_tweets(self,):
 		# using the tweepy library to retrieve user queries
 		auth = tweepy.OAuthHandler(self.public_consumer_key,self.secret_consumer_key)
 		auth.set_access_token(self.public_access_key,self.secret_access_key)
@@ -49,38 +89,6 @@ class PersonTweeter:
 		sentence_list = sentence.split()
 		for i in range(len(sentence_list) - 2):
 			yield (sentence_list[i], sentence_list[i+1],sentence_list[i+2])
-
-	def _generate_json_doc(self,):
-		'''
-
-		Goes through all quotes and generates a JSON Document with the following pattern:
-
-		# "a b c a b k"
-		# {'a b': ['c','k'], 'b c': ['a'], 'c a': ['b']}
-		# Algorithm Inspired From:
-		# http://stackoverflow.com/questions/5306729/how-do-markov-chain-chatbots-work/5307230#5307230
-
-		'''
-		# Get all the quotes
-		quotes = [quote.text for quote in self._get_tweets()]
-
-		# Set up a dictionary to store the quotes in a tree like structure
-		markov_dict = {}
-
-		# for each quote, set up all possible combinations
-		for quote in quotes:
-			for w1,w2,w3 in self._triple_sets(quote):
-				# Do not allow the words to contain  "\"" and do not copy expressions that are urls.
-				if not re.match("http.*",w1) and not re.match("http.*",w2) and not re.match("http.*",w3):
-					w1 = w1.replace("\"","")
-					w2 = w2.replace("\"","")
-					w3 = w3.replace("\"","")
-					markov_dict.setdefault(unicode(' '.join((w1,w2))),[]).append(unicode(w3))
-
-		# Prettyprint a sorted list of the markov dict into a the trump.json doc
-		json_text = json.dumps(markov_dict,indent=4,sort_keys=True)
-		with open("tweets.json","w") as f:
-			f.write(json_text)
 
 	def _proper_capitalization(self,sentence):
 		'''
@@ -110,24 +118,25 @@ class PersonTweeter:
 		Using the document generated in the intialization step, generate a tweet
 		by executing a random walk on the markov chain.
 		'''
+		if not self.tweets_loaded:
+			_generate_json_doc(self,)
+			_load_json_doc(self,)
 
 		# Start with Empty String
 		tweet = ""
-
-		#Initial Starting Key
-		key = random.choice(self.tweet_json.keys())
+		key = random.choice(self.json_tree.keys())
+		tweet += key.split(' ')[0] + ' '
 
 		while len(tweet) < length:
+			tweet += key.split(' ')[1] + ' '
 			try:
-				value = random.choice(self.trump_json[trump_key])
+				value = random.choice(self.json_tree[key])
 			except KeyError as e:
-				trump_tweet += '. '
-				trump_value = random.choice(self.trump_json.keys())
-
-			trump_tweet += ' '.join([trump_key,trump_value])
-
-			# Getting second word in trump key to generate new key
-			trump_second = trump_key.split(' ')[1]
-			trump_key = ' '.join([trump_second,trump_value])
-
-		return self._proper_capitalization(trump_tweet)
+				key = random.choice(self.json_tree.keys())
+			else:
+				word1, word2 = key.split(" ")
+				key = ' '.join([word2,value])
+		if self.proper_caps:
+			return self._proper_capitalization(tweet)
+		else:
+			return tweet
