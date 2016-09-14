@@ -20,8 +20,15 @@ walks of the tweets to occur.
 
 ## Installation
 
+```bash
 git clone https://www.github.com/oliviersm199/Tweet-Generator
 cd Tweet-Generator
+virtualenv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
+## Usage
 
 ```python
 TPCK,TSCK,TPAK,TSAK = '<public_consumer_key>','<secret_consumer_key>','<public_access_key>','<secret_access_key>'
