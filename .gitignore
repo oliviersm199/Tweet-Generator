@@ -2,3 +2,10 @@
 venv
 venv/*
 *.json
+*.egg-info
+build
+build/*
+.idea
+.idea/*
+dist
+dist/*
