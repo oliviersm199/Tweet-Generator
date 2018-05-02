@@ -1,7 +1,7 @@
 __title__ = 'tweet-generator'
 __description__ = 'Python Randomized Tweet Generator'
 __url__ = 'http://www.github.com/oliviersm199'
-__version__ = '0.0.2'
+__version__ = '0.0.3'
 __build__ = None
 __author__ = 'Olivier Simard-Morissette'
 __author_email__ = 'olivier.morissette@gmail.com'

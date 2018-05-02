@@ -10,6 +10,7 @@ import sys
 from shutil import rmtree
 
 from setuptools import find_packages, setup, Command
+from tweet_generator import __version__
 
 # Package meta-data.
 NAME = 'tweet-generator'
@@ -18,7 +19,7 @@ URL = 'https://github.com/oliviersm199'
 EMAIL = 'olivier.morissette@gmail.com'
 AUTHOR = 'Olivier Simard-Morissette'
 REQUIRES_PYTHON = '>=3.6.0'
-VERSION = '0.0.2'
+VERSION = __version__
 
 # What packages are required for this module to be executed?
 REQUIRED = [
